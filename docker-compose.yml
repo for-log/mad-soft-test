@@ -1,0 +1,72 @@
+services:
+  mem-service:
+    build:
+      dockerfile: mem.Dockerfile
+    ports:
+      - 8000:8000
+    environment:
+      IMAGE_SERVICE: http://image-service:8001
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres-service:5432/postgres
+    depends_on:
+      - postgres-service
+    networks:
+      - test-net
+
+  image-service:
+    build:
+      dockerfile: image.Dockerfile
+    ports:
+      - 8001:8001
+    environment:
+      MINIO_URL: minio-service:9000
+      ACCESS_KEY: minio
+      SECRET_KEY: minio123
+      BUCKET_NAME: images
+    depends_on:
+      - minio-service
+    restart: on-failure
+    networks:
+      - test-net
+
+  postgres-service:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    networks:
+      - test-net
+
+  minio-service:
+    image: minio/minio
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - minio_storage:/data
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    command: server --console-address ":9001" /data
+    networks:
+      - test-net
+
+  nginx:
+    image: nginx
+    ports:
+      - 80:80
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./static:/var/www/static
+    networks:
+      - test-net
+    depends_on:
+      - mem-service
+      - image-service
+
+networks:
+  test-net:
+    driver: bridge
+
+volumes:
+  minio_storage: {}

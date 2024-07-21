@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>All memes</title>
+    <style>
+        .memes {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 10px;
+        }
+        .memes div {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Пример отображения:</h1>
+    <div class="memes"></div>
+    <script>
+        const memes = document.querySelector('.memes');
+        fetch("/api/memes")
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(meme => {
+                    const parent = document.createElement('div');
+
+                    const img = document.createElement('img');
+                    img.src = `/image/download/${meme.image}`;
+                    parent.appendChild(img);
+
+                    const caption = document.createElement('p');
+                    caption.textContent = meme.text;
+                    parent.appendChild(caption);
+
+                    memes.appendChild(parent);
+                })
+            })
+    </script>
+</body>
+</html>
