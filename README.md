@@ -16,8 +16,19 @@
 
 ## Запуск
 1. Установка Docker (https://docs.docker.com/get-docker/)
-2. ```bash
+2. Настройка окружения (см. docker-compose.yml):
+    - DATABASE_URL
+    - MINIO_URL
+    - ACCESS_KEY
+    - SECRET_KEY
+    - BUCKET_NAME
+    - POSTGRES_USER
+    - POSTGRES_PASSWORD
+    - POSTGRES_DB
+    - MINIO_ROOT_USER
+    - MINIO_ROOT_PASSWORD
+3. ```bash
    # В папке с проектом
    docker compose up
     ```
-3. http://localhost/docs
+4. http://localhost/docs
