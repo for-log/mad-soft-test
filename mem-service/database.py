@@ -34,7 +34,7 @@ async def drop_tables():
 
 async def get_memes(last_id: int = 0, limit: int = 10) -> list[Meme]:
     async with get_session() as session:
-        query = await session.exec(select(Meme).where(Meme.id > last_id).limit(limit))
+        query = await session.exec(select(Meme).where(Meme.id > last_id).order_by(Meme.id).limit(limit))
         return query.all()
 
 
