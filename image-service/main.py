@@ -1,4 +1,3 @@
-from io import BytesIO
 from typing import Annotated
 from fastapi import FastAPI, UploadFile, Depends
 from fastapi.responses import StreamingResponse
@@ -35,4 +34,7 @@ def upload_image(file: UploadFile, repository: S3Depend):
 @app.get("/download/{filename}")
 def get_image(filename: str, repository: S3Depend):
     file = repository.get_file(filename)
-    return StreamingResponse(BytesIO(file.read()))
+    def read_file():
+        for chunk in file.stream():
+            yield chunk
+    return StreamingResponse(read_file())
