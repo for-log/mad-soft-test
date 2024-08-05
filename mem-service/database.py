@@ -23,9 +23,9 @@ async def meme_repository() -> AsyncGenerator["MemeRepository", None]:
         yield MemeRepository(session)
 
 
-async def get_meme_repository() -> "MemeRepository":
+async def get_meme_repository() -> AsyncGenerator["MemeRepository", None]:
     async with meme_repository() as meme_repo:
-        return meme_repo
+        yield    meme_repo
 
 
 async def create_tables():

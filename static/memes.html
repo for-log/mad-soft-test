@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <title>All memes</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         .memes {
             display: flex;
             flex-direction: row;
@@ -20,13 +25,45 @@
     </style>
 </head>
 <body>
-    <h1>Пример отображения:</h1>
+    <h1>Мемесы:</h1>
+    <div style="display: flex; position: absolute; align-items: center; justify-content: space-between; width: 100%; height: 100%;">
+        <button id="back">Назад</button>
+        <button id="next">Вперед</button>
+    </div>
     <div class="memes"></div>
     <script>
+        next.addEventListener('click', () => {
+            getMemes();
+        })
+
+        back.addEventListener('click', () => {
+            lastIDs = lastIDs.slice(0, -2);
+            getMemes();
+        })
+        let lastIDs = [0];
+        let isEnd = false;
+
         const memes = document.querySelector('.memes');
-        fetch("/api/memes")
+        const handleEnd = (count) => {
+            isEnd = count < 28;
+            if (isEnd) {
+                next.disabled = true;
+            } else {
+                next.disabled = false;
+            }
+            if (lastIDs == [0]) {
+                back.disabled = true;
+            } else {
+                back.disabled = false;
+            }
+        }
+        const getMemes = () => fetch(`/api/memes?last_id=${lastIDs[lastIDs.length - 1]}&limit=28`)
             .then(response => response.json())
             .then(data => {
+                handleEnd(data.length);
+                if (!data) return
+                memes.replaceChildren();
+                lastIDs.push(data[data.length - 1].id);
                 data.forEach(meme => {
                     const parent = document.createElement('div');
 
@@ -41,6 +78,8 @@
                     memes.appendChild(parent);
                 })
             })
+
+        getMemes();
     </script>
 </body>
 </html>
