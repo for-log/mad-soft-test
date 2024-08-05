@@ -57,7 +57,7 @@ services:
       - 80:80
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./static:/var/www/static
+      - ./static:/var/www/static/
     networks:
       - test-net
     depends_on:

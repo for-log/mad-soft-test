@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from os import environ
 from typing import AsyncGenerator, Optional
 
@@ -17,9 +18,14 @@ class Meme(SQLModel, table=True):
 
 
 @asynccontextmanager
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
+async def meme_repository() -> AsyncGenerator["MemeRepository", None]:
     async with AsyncSession(engine) as session:
-        yield session
+        yield MemeRepository(session)
+
+
+async def get_meme_repository() -> "MemeRepository":
+    async with meme_repository() as meme_repo:
+        return meme_repo
 
 
 async def create_tables():
@@ -32,42 +38,39 @@ async def drop_tables():
         await conn.run_sync(SQLModel.metadata.drop_all)
 
 
-async def get_memes(last_id: int = 0, limit: int = 10) -> list[Meme]:
-    async with get_session() as session:
-        query = await session.exec(select(Meme).where(Meme.id > last_id).order_by(Meme.id).limit(limit))
+@dataclass
+class MemeRepository:
+    session: AsyncSession
+
+    async def get_memes(self, last_id: int, limit: int) -> list[Meme]:
+        query = await self.session.exec(
+            select(Meme).where(Meme.id > last_id).order_by(Meme.id).limit(limit)
+        )
         return query.all()
 
+    async def create_meme(self, meme: Meme) -> Meme:
+        self.session.add(meme)
+        await self.session.commit()
+        await self.session.refresh(meme)
+        return meme
 
-async def create_meme(meme: Meme) -> Meme:
-    async with get_session() as session:
-        session.add(meme)
-        await session.commit()
-        await session.refresh(meme)
-    return meme
+    async def get_meme(self, id: int) -> Meme:
+        return await self.session.get(Meme, id)
 
-
-async def get_meme(id: int) -> Meme:
-    async with get_session() as session:
-        return await session.get(Meme, id)
-
-
-async def update_meme(id: int, meme: Meme) -> Optional[Meme]:
-    async with get_session() as session:
-        old_meme = await session.get(Meme, id)
+    async def update_meme(self, id: int, meme: Meme) -> Optional[Meme]:
+        old_meme = await self.session.get(Meme, id)
         if not old_meme:
             return None
 
         old_meme.text = meme.text
         old_meme.image = meme.image
-        session.add(old_meme)
-        await session.commit()
-        await session.refresh(old_meme)
-    return old_meme
+        self.session.add(old_meme)
+        await self.session.commit()
+        await self.session.refresh(old_meme)
+        return old_meme
 
-
-async def delete_meme(id: int) -> Meme:
-    async with get_session() as session:
-        meme = await session.get(Meme, id)
-        await session.delete(meme)
-        await session.commit()
-    return meme
+    async def delete_meme(self, id: int) -> Meme:
+        meme = await self.session.get(Meme, id)
+        await self.session.delete(meme)
+        await self.session.commit()
+        return meme

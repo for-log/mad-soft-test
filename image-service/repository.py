@@ -1,24 +1,23 @@
 from minio import Minio
-from os import environ
-
-client = Minio(
-    environ.get("MINIO_URL"),
-    environ.get("ACCESS_KEY"),
-    environ.get("SECRET_KEY"),
-    secure=False
-)
-MAIN_BUCKET = environ.get("BUCKET_NAME")
 
 
-def create_bucket_if_not_exists():
-    if client.bucket_exists(MAIN_BUCKET):
-        return
-    client.make_bucket(MAIN_BUCKET)
+class MinioRepository:
+    def __init__(self, *, url, access_key, secret_key, bucket_name):
+        self.client = Minio(
+            url,
+            access_key=access_key,
+            secret_key=secret_key,
+            secure=False,
+        )
+        self.bucket_name = bucket_name
 
+    def create_bucket_if_not_exists(self):
+        if self.client.bucket_exists(self.bucket_name):
+            return
+        self.client.make_bucket(self.bucket_name)
 
-def upload_file(file_name, data, ln):
-    client.put_object(MAIN_BUCKET, file_name, data, ln)
+    def upload_file(self, file_name, data, ln):
+        self.client.put_object(self.bucket_name, file_name, data, ln)
 
-
-def get_file(file_name):
-    return client.get_object(MAIN_BUCKET, file_name)
+    def get_file(self, file_name):
+        return self.client.get_object(self.bucket_name, file_name)

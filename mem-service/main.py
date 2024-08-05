@@ -1,4 +1,5 @@
-from fastapi import FastAPI, UploadFile, HTTPException
+from typing import Annotated
+from fastapi import FastAPI, UploadFile, HTTPException, Depends
 
 import database
 import config
@@ -21,6 +22,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+MemeRepoDepend = Annotated[
+    database.MemeRepository, Depends(database.get_meme_repository)
+]
 
 
 @app.on_event("startup")
@@ -29,30 +33,30 @@ async def on_startup():
 
 
 @app.get("/memes")
-async def get_memes(last_id: int = 0, limit: int = 10):
-    return await database.get_memes(last_id, limit)
+async def get_memes(meme_repo: MemeRepoDepend, last_id: int = 0, limit: int = 10):
+    return await meme_repo.get_memes(last_id, limit)
 
 
 @app.get("/memes/{id}")
-async def get_meme(id: int):
-    return await database.get_meme(id)
+async def get_meme(meme_repo: MemeRepoDepend, id: int):
+    return await meme_repo.get_meme(id)
 
 
 @app.post("/memes")
-async def create_meme(text: str, file: UploadFile):
+async def create_meme(meme_repo: MemeRepoDepend, text: str, file: UploadFile):
     validate_file(file)
     random_name = await external.upload_file(file.file)
-    return await database.create_meme(database.Meme(text=text, image=random_name))
+    return await meme_repo.create_meme(database.Meme(text=text, image=random_name))
 
 
 @app.put("/memes/{id}")
-async def update_meme(id: int, text: str, file: UploadFile):
+async def update_meme(meme_repo: MemeRepoDepend, id: int, text: str, file: UploadFile):
     validate_file(file)
     random_name = external.upload_file(file.file)
     meme = database.Meme(text=text, image=random_name)
-    return await database.update_meme(id, meme)
+    return await meme_repo.update_meme(id, meme)
 
 
 @app.delete("/memes/{id}")
-async def delete_meme(id: int):
-    return await database.delete_meme(id)
+async def delete_meme(meme_repo: MemeRepoDepend, id: int):
+    return await meme_repo.delete_meme(id)
